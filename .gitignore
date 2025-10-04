@@ -1,0 +1,59 @@
+# =============================
+# 🧠 SuperTerm Project GitIgnore
+# =============================
+
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.log
+*.sqlite3
+
+# ---- Virtual environment ----
+.superterm_env/
+venv/
+env/
+ENV/
+*.env
+.Python
+
+# ---- Ollama local cache/models ----
+# (these can be huge; they’re downloaded automatically)
+~/.ollama/
+ollama_models/
+ollama_cache/
+
+# ---- Build / Distribution ----
+build/
+dist/
+.eggs/
+*.egg
+MANIFEST
+
+# ---- Editors / IDEs ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# ---- OS-specific ----
+.DS_Store
+Thumbs.db
+
+# ---- Memory / Runtime files ----
+memory.json
+run_superterm.sh
+*.pid
+*.tmp
+*.lock
+
+# ---- Misc ----
+logs/
+*.out
+*.bak
+*.old
+*.retry
