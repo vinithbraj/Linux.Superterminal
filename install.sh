@@ -3,7 +3,12 @@ set -e
 
 echo "🚀 Setting up SuperTerm..."
 
-# --- 1️⃣ Create venv ---
+# --- 0️⃣ Ensure Python venv support ---
+echo "🐍 Checking Python venv module..."
+sudo apt-get update -y
+sudo apt-get install -y python3-venv python3.12-venv || true
+
+# --- 1️⃣ Create virtual environment ---
 if [ ! -d ".superterm_env" ]; then
   echo "📦 Creating virtual environment..."
   python3 -m venv .superterm_env
@@ -30,28 +35,41 @@ fi
 echo "🔧 Installing SuperTerm (editable)..."
 pip install -e .
 
-# --- 7️⃣ Check Ollama ---
+# --- 7️⃣ Check & install Ollama ---
 echo "🔎 Checking Ollama..."
-if pgrep -x "ollama" >/dev/null; then
-  echo "✅ Ollama is running."
+if ! command -v ollama &> /dev/null; then
+  echo "⚠️  Ollama not found. Installing..."
+  curl -fsSL https://ollama.com/install.sh | sh
+  echo "✅ Ollama installed successfully."
 else
-  echo "⚠️  Ollama not running. Start it with:  ollama serve"
+  echo "✅ Ollama is already installed."
 fi
 
-if ollama list | grep -q "llama3"; then
-  echo "✅ Model 'llama3' found."
+# Start Ollama service if not running
+if ! pgrep -x "ollama" > /dev/null; then
+  echo "▶️  Starting Ollama service..."
+  nohup ollama serve >/dev/null 2>&1 &
+  sleep 3
 else
-  echo "⚠️  Model 'llama3' not found. Run:  ollama pull llama3"
+  echo "✅ Ollama is already running."
+fi
+
+# Pull model llama3 if missing
+if ! ollama list 2>/dev/null | grep -q "llama3"; then
+  echo "📦 Pulling model 'llama3'..."
+  ollama pull llama3
+else
+  echo "✅ Model 'llama3' already available."
 fi
 
 # --- 8️⃣ Create desktop entry ---
 echo "🖥️  Creating desktop entry..."
-python3 - <<'EOF'
+python3 <<'EOF'
 import os
 from pathlib import Path
 
 HOME = Path.home()
-project_dir = Path.cwd()
+project_dir = Path(__file__).resolve().parent
 desktop_dir = HOME / "Desktop"
 apps_dir = HOME / ".local/share/applications"
 
@@ -66,14 +84,13 @@ Version=1.0
 Type=Application
 Name={app_name}
 Comment={comment}
-Exec=gnome-terminal -- bash -c "cd {project_dir} && ./run.sh; exec bash"
+Exec=gnome-terminal --title="SuperTerm – AI Terminal" -- bash -c "cd {project_dir} && ./run_superterm.sh; exec bash"
 Icon={icon_path if icon_path.exists() else "utilities-terminal"}
 Terminal=false
 StartupNotify=true
 Categories=Utility;Development;
 """
 
-# Write to ~/.local/share/applications and Desktop
 apps_dir.mkdir(parents=True, exist_ok=True)
 (apps_dir / entry_name).write_text(entry_content)
 os.chmod(apps_dir / entry_name, 0o755)
@@ -87,10 +104,9 @@ else:
 
 print(f"✅ Created application entry: {apps_dir / entry_name}")
 
-# Mark trusted (GNOME/Mint)
 os.system(f'gio set "{apps_dir / entry_name}" metadata::trusted true 2>/dev/null')
 os.system(f'gio set "{desktop_dir / entry_name}" metadata::trusted true 2>/dev/null')
-print("🎉 SuperTerm launcher ready! Search in menu or double-click the desktop icon.")
+print('🎉 SuperTerm launcher ready! Search in menu or double-click the desktop icon.')
 EOF
 
 echo
