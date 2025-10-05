@@ -82,8 +82,6 @@ def query_llm(prompt: str) -> str:
             f"User input:\n{prompt}\nAssistant:"
         )
 
-        print(full_prompt)
-
         # --- 📨 Send to Ollama ---
         payload = {
             "model": MODEL_NAME,

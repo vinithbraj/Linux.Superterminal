@@ -40,7 +40,7 @@ def parse_response(response: str):
     match = re.search(r"Explanation:\s*(.*?)\nCommand:\s*(.*)", response, re.S)
     if match:
         return match.group(1).strip(), match.group(2).strip()
-    return response.strip(), "No explanation found."
+    return response.strip(),"none"
 
 
 def change_directory(path: str):
@@ -90,15 +90,18 @@ def run():
                 print(f"\n🔹 Suggested command: {command}")
                 print(f"💬 {explanation}")
 
-                # Only prompt if the command is runnable
-                if command and command.lower() not in ("[none]", "none"):
-                    confirm = input(f"Run it -> {command}? [y/N] ").strip().lower()
-                    if confirm == "y" and "command:" not in command.lower():
-                        if command.startswith("cd "):
-                            change_directory(command[3:].strip())
-                        else:
-                            print(run_command(command))
-                        add_to_history(command)
+                # --- Only prompt if the command is truly runnable ---
+                if command:
+                    if "none" not in command.lower():
+                        confirm = input(f"Run it -> {command}? [y/N] ").strip().lower()
+                        if confirm == "y" and "command:" not in command.lower():
+                            if command.startswith("cd "):
+                                change_directory(command[3:].strip())
+                            else:
+                                print(run_command(command))
+                            add_to_history(command)
+                    else:
+                        print("\n💬 No command to execute.\n")
                 continue
 
             # --- Normal shell command ---
