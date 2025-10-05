@@ -1,30 +1,63 @@
 import requests
 import json
 
+# Configuration
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "llama3"
+MODEL_NAME = "llama3"   # you can switch to codellama / mistral / phind-codellama, etc.
+TIMEOUT = 300
+SESSION_HISTORY = []
+MAX_HISTORY = 5   # keep last 5 exchanges
+
+# --- 🧠 System prompt (persistent instruction) ---
+SYSTEM_PROMPT = """
+You are a Linux terminal assistant named SuperTerm, running inside an Ubuntu guest VM.
+Your job is to translate natural language requests into *safe, correct Linux shell commands*.
+Follow these rules:
+
+1. Output must always have two sections, exactly like this:
+   Command: <single precise shell command>
+   Explanation: <clear one-line human explanation>
+
+2. Never include extra text, greetings, or markdown formatting.
+3. When mounting VMware shared folders, use:
+   sudo vmhgfs-fuse .host:/ /mnt/hgfs -o allow_other
+4. Prefer common Linux utilities (ls, df -h, du -sh, etc.).
+5. If you're unsure, suggest the safest command rather than a destructive one.
+"""
 
 def query_llm(prompt: str) -> str:
     """
-    Query the local LLM to suggest a command and explain it.
-    Returns a tuple (command, explanation).
+    Query the local Ollama model with short-term memory of previous commands.
     """
-    system_prompt = (
-        "You are an Ubuntu terminal expert. "
-        "When the user describes a task, respond with:\n\n"
-        "Command: <exact command>\n"
-        "Explanation: <short, clear explanation>\n\n"
-        "Example:\n"
-        "Command: sudo apt install ffmpeg\n"
-        "Explanation: Installs FFmpeg from Ubuntu repositories."
-    )
+    try:
+        # Build rolling context
+        context = "\n".join(SESSION_HISTORY[-MAX_HISTORY:])
+        full_prompt = (
+            f"{SYSTEM_PROMPT.strip()}\n\n"
+            f"Conversation so far:\n{context}\n\n"
+            f"User: {prompt}\nAssistant:"
+        )
 
-    data = {
-        "model": MODEL,
-        "prompt": f"{system_prompt}\n\nUser: {prompt}",
-        "stream": False
-    }
+        payload = {"model": MODEL_NAME, "prompt": full_prompt, "stream": False}
+        resp = requests.post(OLLAMA_URL, json=payload, timeout=TIMEOUT)
+        text = resp.text.strip()
 
-    response = requests.post(OLLAMA_URL, json=data)
-    text = json.loads(response.text)["response"]
-    return text.strip()
+        try:
+            data = json.loads(text)
+            if "response" in data:
+                result = data["response"].strip()
+            else:
+                result = text
+        except json.JSONDecodeError:
+            result = text
+
+        # Save to session history
+        SESSION_HISTORY.append(f"User: {prompt}")
+        SESSION_HISTORY.append(f"Assistant: {result}")
+
+        return result
+
+    except requests.ConnectionError:
+        return "[Cannot connect to Ollama. Is 'ollama serve' running?]"
+    except Exception as e:
+        return f"[Unexpected error: {e}]"

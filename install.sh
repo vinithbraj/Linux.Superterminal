@@ -76,7 +76,7 @@ apps_dir = HOME / ".local/share/applications"
 entry_name = "superterm.desktop"
 app_name = "SuperTerm"
 comment = "AI-powered Ubuntu Terminal"
-script_path = project_dir / "run_superterm.sh"
+script_path = project_dir / "run.sh"
 icon_path = project_dir / "icon.png"
 
 entry_content = f"""[Desktop Entry]
@@ -84,7 +84,7 @@ Version=1.0
 Type=Application
 Name={app_name}
 Comment={comment}
-Exec=gnome-terminal --title="SuperTerm – AI Terminal" -- bash -c "cd {project_dir} && ./run_superterm.sh; exec bash"
+Exec=gnome-terminal --title="SuperTerm – AI Terminal" -- bash -c "cd {project_dir} && ./run.sh; exec bash"
 Icon={icon_path if icon_path.exists() else "utilities-terminal"}
 Terminal=false
 StartupNotify=true
