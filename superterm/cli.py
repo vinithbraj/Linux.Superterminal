@@ -15,10 +15,10 @@ if HISTORY_FILE.exists():
 
 # Limit history length and enable completion
 readline.set_history_length(1000)
-readline.parse_and_bind("tab: complete")               # Tab autocompletion
-readline.parse_and_bind('"\\C-r": reverse-search-history')  # Ctrl+R search
+readline.parse_and_bind("tab: complete")
+readline.parse_and_bind('"\\C-r": reverse-search-history')
 
-app = typer.Typer()  # Typer expects this app instance
+app = typer.Typer()
 
 
 # ============================================================
@@ -37,7 +37,7 @@ def add_to_history(command: str):
 
 def parse_response(response: str):
     """Extract Command and Explanation lines from LLM output."""
-    match = re.search(r"Command:\s*(.*?)\nExplanation:\s*(.*)", response, re.S)
+    match = re.search(r"Explanation:\s*(.*?)\nCommand:\s*(.*)", response, re.S)
     if match:
         return match.group(1).strip(), match.group(2).strip()
     return response.strip(), "No explanation found."
@@ -60,12 +60,11 @@ def change_directory(path: str):
 @app.command()
 def run():
     """Interactive SuperTerm loop."""
-    print("🧠 SuperTerm — AI-powered Ubuntu Terminal (local model)")
-    print("Type normal Linux commands, or prefix with ! to ask the LLM. Ctrl+C to exit.\n")
+    print("🧠 SuperTerm — AI-powered Ubuntu Terminal")
+    print("💡 Tip: Prefix '!' for AI (e.g., '!ref why?', '!info ubuntu'), normal commands run as shell.\n")
 
     while True:
         try:
-            # Show prompt with current working directory
             prompt = f"{os.getcwd()} > "
             user_input = input(prompt).strip()
             if not user_input:
@@ -75,35 +74,34 @@ def run():
             if user_input.lower() in ["exit", "quit"]:
                 break
 
-            # 🔹 Info-only mode: respond but don’t store
-            if user_input.startswith("!info"):
-                info_prompt = user_input[1:].strip()
-                print(f"🧠 Info request: {info_prompt}")
-                response = query_llm(info_prompt)
-                print(f"\n💬 {response}\n")
-                continue
-
-            # 🔹 Command suggestion mode (LLM)
+            # --- Handle AI-assisted modes ---
             if user_input.startswith("!"):
                 llm_prompt = user_input[1:].strip()
                 print(f"🧠 Sending to LLM: {llm_prompt}")
 
                 response = query_llm(llm_prompt)
-                command, explanation = parse_response(response)
+                explanation, command = parse_response(response)
+
+                # If LLM returns no actual command, just display reasoning
+                if not command or command.lower() in ("[none]", "none"):
+                    print(f"\n💬 {explanation}\n")
+                    continue
 
                 print(f"\n🔹 Suggested command: {command}")
                 print(f"💬 {explanation}")
 
-                confirm = input("Run it? [y/N] ").lower()
-                if confirm == "y" and command and "Command:" not in command:
-                    if command.startswith("cd "):
-                        change_directory(command[3:].strip())
-                    else:
-                        print(run_command(command))
-                    add_to_history(command)
+                # Only prompt if the command is runnable
+                if command and command.lower() not in ("[none]", "none"):
+                    confirm = input(f"Run it -> {command}? [y/N] ").strip().lower()
+                    if confirm == "y" and "command:" not in command.lower():
+                        if command.startswith("cd "):
+                            change_directory(command[3:].strip())
+                        else:
+                            print(run_command(command))
+                        add_to_history(command)
                 continue
 
-            # 🔹 Direct user command
+            # --- Normal shell command ---
             if user_input.startswith("cd "):
                 change_directory(user_input[3:].strip())
             else:
