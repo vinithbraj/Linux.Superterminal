@@ -35,32 +35,41 @@ fi
 echo "🔧 Installing SuperTerm (editable)..."
 pip install -e .
 
-# --- 7️⃣ Check & install Ollama ---
-echo "🔎 Checking Ollama..."
-if ! command -v ollama &> /dev/null; then
-  echo "⚠️  Ollama not found. Installing..."
-  curl -fsSL https://ollama.com/install.sh | sh
-  echo "✅ Ollama installed successfully."
-else
-  echo "✅ Ollama is already installed."
-fi
+# --- 7️⃣ Ollama Setup (user choice) ---
+echo
+echo "🧠 Ollama Setup Options"
+echo "------------------------"
+echo "1️⃣ Install Ollama locally on this machine"
+echo "2️⃣ Use Ollama via Docker (recommended for GPU)"
+echo "3️⃣ Skip Ollama setup for now"
+echo
+read -p "Choose an option (1/2/3): " OLLAMA_OPTION
 
-# Start Ollama service if not running
-if ! pgrep -x "ollama" > /dev/null; then
-  echo "▶️  Starting Ollama service..."
-  nohup ollama serve >/dev/null 2>&1 &
-  sleep 3
-else
-  echo "✅ Ollama is already running."
-fi
-
-# Pull model llama3 if missing
-if ! ollama list 2>/dev/null | grep -q "llama3"; then
-  echo "📦 Pulling model 'llama3'..."
-  ollama pull llama3
-else
-  echo "✅ Model 'llama3' already available."
-fi
+case $OLLAMA_OPTION in
+  1)
+    echo "⚙️ Installing Ollama locally..."
+    curl -fsSL https://ollama.com/install.sh | sh
+    echo "✅ Ollama installed successfully."
+    ;;
+  2)
+    echo "🐋 Using Ollama via Docker..."
+    echo "📎 Please follow the official Docker instructions here:"
+    echo "👉 https://hub.docker.com/r/ollama/ollama"
+    echo
+    echo "Example command (CPU only):"
+    echo "   docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama"
+    echo
+    echo "For GPU (if supported):"
+    echo "   docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama"
+    echo
+    ;;
+  3)
+    echo "⚠️ Skipping Ollama setup. You can configure it later."
+    ;;
+  *)
+    echo "❌ Invalid option. Skipping Ollama setup."
+    ;;
+esac
 
 # --- 8️⃣ Create desktop entry ---
 echo "🖥️  Creating desktop entry..."
@@ -116,3 +125,5 @@ echo "To start SuperTerm manually, run:"
 echo "    source .superterm_env/bin/activate && superterm"
 echo
 echo "Or simply click the SuperTerm icon on your Desktop / Applications menu 🧠"
+echo
+echo "💡 If you chose Docker Ollama, make sure the container is running before launching SuperTerm."
