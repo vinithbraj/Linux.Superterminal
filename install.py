@@ -44,10 +44,59 @@ else
   echo "⚠️  Model 'llama3' not found. Run:  ollama pull llama3"
 fi
 
+# --- 8️⃣ Create desktop entry ---
+echo "🖥️  Creating desktop entry..."
+python3 - <<'EOF'
+import os
+from pathlib import Path
+
+HOME = Path.home()
+project_dir = Path.cwd()
+desktop_dir = HOME / "Desktop"
+apps_dir = HOME / ".local/share/applications"
+
+entry_name = "superterm.desktop"
+app_name = "SuperTerm"
+comment = "AI-powered Ubuntu Terminal"
+script_path = project_dir / "run_superterm.sh"
+icon_path = project_dir / "icon.png"
+
+entry_content = f"""[Desktop Entry]
+Version=1.0
+Type=Application
+Name={app_name}
+Comment={comment}
+Exec=gnome-terminal -- bash -c "cd {project_dir} && ./run.sh; exec bash"
+Icon={icon_path if icon_path.exists() else "utilities-terminal"}
+Terminal=false
+StartupNotify=true
+Categories=Utility;Development;
+"""
+
+# Write to ~/.local/share/applications and Desktop
+apps_dir.mkdir(parents=True, exist_ok=True)
+(apps_dir / entry_name).write_text(entry_content)
+os.chmod(apps_dir / entry_name, 0o755)
+
+if desktop_dir.exists():
+    (desktop_dir / entry_name).write_text(entry_content)
+    os.chmod(desktop_dir / entry_name, 0o755)
+    print(f"✅ Created Desktop icon: {desktop_dir / entry_name}")
+else:
+    print("⚠️  Desktop folder not found — skipped desktop shortcut.")
+
+print(f"✅ Created application entry: {apps_dir / entry_name}")
+
+# Mark trusted (GNOME/Mint)
+os.system(f'gio set "{apps_dir / entry_name}" metadata::trusted true 2>/dev/null')
+os.system(f'gio set "{desktop_dir / entry_name}" metadata::trusted true 2>/dev/null')
+print("🎉 SuperTerm launcher ready! Search in menu or double-click the desktop icon.")
+EOF
+
 echo
 echo "🎉 Installation complete!"
 echo "------------------------------------------------------"
-echo "To start SuperTerm, run:"
+echo "To start SuperTerm manually, run:"
 echo "    source .superterm_env/bin/activate && superterm"
 echo
-echo "Enjoy your LLM-powered terminal 🧠"
+echo "Or simply click the SuperTerm icon on your Desktop / Applications menu 🧠"
