@@ -1,38 +1,53 @@
+import typer
 from superterm.llm_client import query_llm
-from superterm.executor import run_command
+from superterm.executer import run_command
 import re
 
+app = typer.Typer()  # 👈 define the app Typer expects
+
 def parse_response(response: str):
-    """Extract command and explanation from model output."""
     match = re.search(r"Command:\s*(.*?)\nExplanation:\s*(.*)", response, re.S)
     if match:
         return match.group(1).strip(), match.group(2).strip()
     return response.strip(), "No explanation found."
 
-def main():
+@app.command()
+def run():
+    """Interactive SuperTerm loop."""
     print("🧠 SuperTerm — AI-powered Ubuntu Terminal (local model)")
-    print("Type natural commands. Ctrl+C to exit.\n")
+    print("Type normal Linux commands, or prefix with ! to ask the LLM. Ctrl+C to exit.\n")
 
     while True:
         try:
-            user_input = input("> ")
+            user_input = input("> ").strip()
+            if not user_input:
+                continue
+
             if user_input.lower() in ["exit", "quit"]:
                 break
 
-            response = query_llm(user_input)
-            command, explanation = parse_response(response)
+            # 🔹 NEW: If starts with '!', send to LLM
+            if user_input.startswith("!"):
+                llm_prompt = user_input[1:].strip()
+                print(f"🧠 Sending to LLM: {llm_prompt}")
 
-            print(f"\n🔹 Suggested command: {command}")
-            print(f"💬 {explanation}")
+                response = query_llm(llm_prompt)
+                command, explanation = parse_response(response)
 
-            confirm = input("Run it? [y/N] ").lower()
-            if confirm == "y":
-                print(run_command(command))
+                print(f"\n🔹 Suggested command: {command}")
+                print(f"💬 {explanation}")
+
+                confirm = input("Run it? [y/N] ").lower()
+                if confirm == "y":
+                    print(run_command(command))
+                continue
+
+            # 🔹 Otherwise, run it directly
+            print(f"⚙️  Executing: {user_input}")
+            print(run_command(user_input))
+
         except KeyboardInterrupt:
             print("\nExiting SuperTerm.")
             break
         except Exception as e:
             print("Error:", e)
-
-if __name__ == "__main__":
-    main()

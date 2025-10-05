@@ -1,91 +1,53 @@
 #!/usr/bin/env bash
 set -e
 
-echo "🧠 SuperTerm Setup Script (with virtual environment)"
-echo "===================================================="
-echo ""
+echo "🚀 Setting up SuperTerm..."
 
-# Variables
-VENV_DIR=".superterm_env"
-MODEL=${1:-llama3}
-
-# Step 1: Ensure Python3 & venv
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "Installing Python3..."
-  sudo apt update && sudo apt install -y python3 python3-venv python3-pip
+# --- 1️⃣ Create venv ---
+if [ ! -d ".superterm_env" ]; then
+  echo "📦 Creating virtual environment..."
+  python3 -m venv .superterm_env
 fi
 
-# Step 2: Create and activate virtual environment
-if [ ! -d "$VENV_DIR" ]; then
-  echo "📦 Creating virtual environment at $VENV_DIR"
-  python3 -m venv "$VENV_DIR"
+# --- 2️⃣ Activate venv ---
+source .superterm_env/bin/activate
+
+# --- 3️⃣ Upgrade pip ---
+echo "⬆️  Upgrading pip..."
+pip install --upgrade pip setuptools wheel
+
+# --- 4️⃣ Install Python dependencies ---
+echo "📥 Installing dependencies..."
+pip install typer rich requests
+
+# --- 5️⃣ Ensure __init__.py exists ---
+if [ ! -f "superterm/__init__.py" ]; then
+  echo "⚙️  Creating __init__.py..."
+  touch superterm/__init__.py
 fi
 
-source "$VENV_DIR/bin/activate"
-echo "✅ Virtual environment activated: $VENV_DIR"
-echo ""
+# --- 6️⃣ Install SuperTerm in editable mode ---
+echo "🔧 Installing SuperTerm (editable)..."
+pip install -e .
 
-# Step 3: Upgrade pip & install dependencies
-pip install --upgrade pip
-pip install requests setuptools wheel
-
-# Step 4: Install Ollama (system-wide)
-if ! command -v ollama >/dev/null 2>&1; then
-  echo "📦 Installing Ollama..."
-  curl -fsSL https://ollama.com/install.sh | sh
-  echo "✅ Ollama installed."
+# --- 7️⃣ Check Ollama ---
+echo "🔎 Checking Ollama..."
+if pgrep -x "ollama" >/dev/null; then
+  echo "✅ Ollama is running."
 else
-  echo "✅ Ollama already installed."
+  echo "⚠️  Ollama not running. Start it with:  ollama serve"
 fi
 
-# Step 5: Start Ollama service
-echo "🚀 Starting Ollama service..."
-sudo systemctl enable ollama || true
-sudo systemctl start ollama || true
-sleep 3
-
-# Step 6: Pull the model
-echo "📥 Pulling model: $MODEL"
-ollama pull "$MODEL"
-
-# Step 7: Verify server health
-echo "🔎 Checking Ollama server..."
-if curl -s http://localhost:11434/api/tags | grep -q "$MODEL"; then
-  echo "✅ Ollama is running and model '$MODEL' is available."
+if ollama list | grep -q "llama3"; then
+  echo "✅ Model 'llama3' found."
 else
-  echo "❌ Ollama service check failed."
-  echo "Run 'sudo systemctl status ollama' to troubleshoot."
-  deactivate
-  exit 1
+  echo "⚠️  Model 'llama3' not found. Run:  ollama pull llama3"
 fi
 
-# Step 8: Install SuperTerm
-if [ -f "setup.py" ]; then
-  echo "📦 Installing SuperTerm package into virtual env..."
-  pip install -e .
-else
-  echo "⚠️ setup.py not found. Run this script from the project root."
-  deactivate
-  exit 1
-fi
-
-# Step 9: Create run helper
-cat <<EOF > run_superterm.sh
-#!/usr/bin/env bash
-source "$VENV_DIR/bin/activate"
-superterm "\$@"
-EOF
-
-chmod +x run_superterm.sh
-
-echo ""
+echo
 echo "🎉 Installation complete!"
 echo "------------------------------------------------------"
 echo "To start SuperTerm, run:"
-echo "    ./run_superterm.sh"
-echo ""
-echo "Your virtual environment is located in: $VENV_DIR"
-echo "To manually activate it:"
-echo "    source $VENV_DIR/bin/activate"
-echo ""
-echo "Enjoy your LLM-powered terminal 🚀"
+echo "    source .superterm_env/bin/activate && superterm"
+echo
+echo "Enjoy your LLM-powered terminal 🧠"
