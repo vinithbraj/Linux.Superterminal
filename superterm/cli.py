@@ -20,6 +20,11 @@ readline.parse_and_bind('"\\C-r": reverse-search-history')  # Ctrl+R search
 
 app = typer.Typer()  # Typer expects this app instance
 
+
+# ============================================================
+# Utility functions
+# ============================================================
+
 def add_to_history(command: str):
     """Add executed command to readline history if not duplicate or empty."""
     if not command:
@@ -29,12 +34,28 @@ def add_to_history(command: str):
     if last != command:
         readline.add_history(command)
 
+
 def parse_response(response: str):
     """Extract Command and Explanation lines from LLM output."""
     match = re.search(r"Command:\s*(.*?)\nExplanation:\s*(.*)", response, re.S)
     if match:
         return match.group(1).strip(), match.group(2).strip()
     return response.strip(), "No explanation found."
+
+
+def change_directory(path: str):
+    """Change SuperTerm’s working directory persistently."""
+    try:
+        os.chdir(os.path.expanduser(path))
+    except FileNotFoundError:
+        print(f"❌ Directory not found: {path}")
+    except Exception as e:
+        print(f"❌ Error changing directory: {e}")
+
+
+# ============================================================
+# Main interactive loop
+# ============================================================
 
 @app.command()
 def run():
@@ -44,7 +65,9 @@ def run():
 
     while True:
         try:
-            user_input = input("> ").strip()
+            # Show prompt with current working directory
+            prompt = f"{os.getcwd()} > "
+            user_input = input(prompt).strip()
             if not user_input:
                 continue
 
@@ -73,14 +96,19 @@ def run():
 
                 confirm = input("Run it? [y/N] ").lower()
                 if confirm == "y" and command and "Command:" not in command:
-                    print(run_command(command))
-                    add_to_history(command)  # ✅ only executed commands stored
+                    if command.startswith("cd "):
+                        change_directory(command[3:].strip())
+                    else:
+                        print(run_command(command))
+                    add_to_history(command)
                 continue
 
             # 🔹 Direct user command
-            print(f"⚙️  Executing: {user_input}")
-            print(run_command(user_input))
-            add_to_history(user_input)  # ✅ store only actually executed commands
+            if user_input.startswith("cd "):
+                change_directory(user_input[3:].strip())
+            else:
+                print(run_command(user_input))
+            add_to_history(user_input)
 
         except KeyboardInterrupt:
             print("\nExiting SuperTerm.")
@@ -92,3 +120,7 @@ def run():
                 readline.write_history_file(HISTORY_FILE)
             except Exception:
                 pass
+
+
+if __name__ == "__main__":
+    app()

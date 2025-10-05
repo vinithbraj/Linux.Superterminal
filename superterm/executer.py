@@ -20,7 +20,15 @@ def run_command(command: str):
                 capture_output=True,
                 text=True
             )
-            output = result.stdout.strip() or result.stderr.strip() or "[No output]"
-            return f"STDOUT:\n{output}"
+            
+            # Decide color scheme based on result
+        if result.returncode == 0:
+            # Success — normal Ubuntu gray text
+            output = result.stdout.strip() or "[No output]"
+            return f"\033[0m{output}\033[0m"
+        else:
+            # Error — Ubuntu red
+            error_output = result.stderr.strip() or "[Command failed with no stderr]"
+            return f"\033[91m{error_output}\033[0m"
     except Exception as e:
         return f"[Error running command: {e}]"
