@@ -82,11 +82,6 @@ def run_command(command: str):
 
         set_last_context(command, full_output)
 
-        if process.returncode == 0:
-            return "\n✅ Command completed successfully"
-        else:
-            return f"\n❌ Command exited with code {process.returncode}"
-
     except Exception as e:
         set_last_context(command, f"[Error running command: {e}]")
         return f"\033[91m[Error running command: {e}]\033[0m"

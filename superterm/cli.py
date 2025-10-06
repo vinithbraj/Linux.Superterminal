@@ -1,32 +1,42 @@
-import typer
-from superterm.llm_client import query_llm
-from superterm.executer import run_command
+# --- Standard library imports ---
+import itertools
+import os
 import re
 import readline
-import os
+import sys
+import threading
+import time
 from pathlib import Path
 
-# Persistent history file
+# --- Third-party imports ---
+import typer
+
+# --- Local application imports ---
+from superterm.executer import run_command
+from superterm.llm_client import query_llm
+
+
+
+# ============================================================
+# Globals functions
+# ============================================================
+
 HISTORY_FILE = Path.home() / ".superterm_cmd_history"
 
-# Load previous history
 if HISTORY_FILE.exists():
     readline.read_history_file(HISTORY_FILE)
 
-# Limit history length and enable completion
 readline.set_history_length(1000)
 readline.parse_and_bind("tab: complete")
 readline.parse_and_bind('"\\C-r": reverse-search-history')
 
 app = typer.Typer()
 
-
 # ============================================================
 # Utility functions
 # ============================================================
 
 def add_to_history(command: str):
-    """Add executed command to readline history if not duplicate or empty."""
     if not command:
         return
     hist_len = readline.get_current_history_length()
@@ -34,23 +44,55 @@ def add_to_history(command: str):
     if last != command:
         readline.add_history(command)
 
-
 def parse_response(response: str):
-    """Extract Command and Explanation lines from LLM output."""
     match = re.search(r"Explanation:\s*(.*?)\nCommand:\s*(.*)", response, re.S)
     if match:
         return match.group(1).strip(), match.group(2).strip()
-    return response.strip(),"none"
-
+    return response.strip(), "none"
 
 def change_directory(path: str):
-    """Change SuperTerm’s working directory persistently."""
     try:
         os.chdir(os.path.expanduser(path))
     except FileNotFoundError:
-        print(f"❌ Directory not found: {path}")
+        print(f"  Directory not found: {path}")
     except Exception as e:
         print(f"❌ Error changing directory: {e}")
+
+def spinning_cursor(message="🧠 Sending to LLM"):
+    spinner = itertools.cycle(["|", "/", "-", "\\"])
+    stop_flag = threading.Event()
+
+    def spin():
+        while not stop_flag.is_set():
+            sys.stdout.write(f"\r{message} " + next(spinner))
+            sys.stdout.flush()
+            time.sleep(0.1)
+        sys.stdout.flush()
+
+    thread = threading.Thread(target=spin)
+    thread.daemon = True  # auto-terminate with main process
+    thread.start()
+
+    # return a closure to stop it safely
+    return lambda: stop_flag.set()
+
+def execute_shell_command(command: str):
+    command = command.strip()
+    if not command:
+        return
+
+    #Prevent accidental execution of AI/LLM commands
+    if "!" in command:
+        return
+
+    try:
+        if command.startswith("cd "):
+            change_directory(command[3:].strip())
+        else:
+            print(run_command(command))
+        add_to_history(command)
+    except Exception as e:
+        print(f"❌ Error executing command '{command}': {e}")
 
 
 # ============================================================
@@ -59,7 +101,6 @@ def change_directory(path: str):
 
 @app.command()
 def run():
-    """Interactive SuperTerm loop."""
     print("🧠 SuperTerm — AI-powered Ubuntu Terminal")
     print("💡 Tip: Prefix '!' for AI (e.g., '!ref why?', '!info ubuntu'), normal commands run as shell.\n")
 
@@ -77,39 +118,32 @@ def run():
             # --- Handle AI-assisted modes ---
             if user_input.startswith("!"):
                 llm_prompt = user_input[1:].strip()
-                print(f"🧠 Sending to LLM: {llm_prompt}")
-
+                stop_spinner = spinning_cursor(f"🧠 Thinking...")
                 response = query_llm(llm_prompt)
+                stop_spinner()
+
                 explanation, command = parse_response(response)
 
-                # If LLM returns no actual command, just display reasoning
-                if not command or command.lower() in ("[none]", "none"):
-                    print(f"\n💬 {explanation}\n")
-                    continue
-
-                print(f"\n🔹 Suggested command: {command}")
                 print(f"💬 {explanation}")
 
-                # --- Only prompt if the command is truly runnable ---
                 if command:
                     if "none" not in command.lower():
-                        confirm = input(f"Run it -> {command}? [y/N] ").strip().lower()
-                        if confirm == "y" and "command:" not in command.lower():
-                            if command.startswith("cd "):
-                                change_directory(command[3:].strip())
-                            else:
-                                print(run_command(command))
-                            add_to_history(command)
-                    else:
-                        print("\n💬 No command to execute.\n")
-                continue
+                        clean_cmd = command.replace("Command:", "").strip()
 
-            # --- Normal shell command ---
-            if user_input.startswith("cd "):
-                change_directory(user_input[3:].strip())
-            else:
-                print(run_command(user_input))
-            add_to_history(user_input)
+                        # show it once
+                        print(f"\n💡 Suggested command: {clean_cmd}\n")
+
+                        # preload it into the input line without reprinting
+                        def prefill():
+                            readline.insert_text(clean_cmd)
+
+                        readline.set_startup_hook(prefill)
+                        try:
+                            user_input = input(f"{os.getcwd()} > ").strip()
+                        finally:
+                            readline.set_startup_hook(None)
+
+            execute_shell_command(user_input)
 
         except KeyboardInterrupt:
             print("\nExiting SuperTerm.")
