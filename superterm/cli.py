@@ -28,6 +28,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+import json
 
 # --- Third-party imports ---
 import typer
@@ -65,11 +66,24 @@ def add_to_history(command: str):
     if last != command:
         readline.add_history(command)
 
+
 def parse_response(response: str):
-    match = re.search(r"Explanation:\s*(.*?)\nCommand:\s*(.*)", response, re.S)
-    if match:
-        return match.group(1).strip(), match.group(2).strip()
-    return response.strip(), "none"
+    """Parse LLM JSON output and return (explanation, command)."""
+    try:
+        # Trim whitespace and extract JSON portion if extra text is present
+        json_start = response.find("{")
+        json_end = response.rfind("}") + 1
+        json_text = response[json_start:json_end].strip()
+
+        data = json.loads(json_text)
+
+        explanation = data.get("explanation", "").strip()
+        command = data.get("command", "").strip()
+        return explanation, command
+    except Exception as e:
+        print(f"⚠️  Failed to parse LLM response as JSON: {e}")
+        return response.strip(), "none"
+
 
 def change_directory(path: str):
     try:
