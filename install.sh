@@ -1,4 +1,24 @@
 #!/usr/bin/env bash
+# -*- coding: utf-8 -*-
+#=========================================================
+# File:        install.sh
+# Author:      Vinith Balakrishnan Raj
+# Created:     2025-10-05
+# Description: Installation script for SuperTerm with venv setup
+#
+# Usage:
+#     bash install.sh
+#
+# Notes:
+#     - Creates Python virtual environment
+#     - Installs all dependencies
+#     - Creates desktop launcher and menu entry
+#     - Supports both native and Docker Ollama
+#
+# License:
+#     MIT License - Copyright (c) 2025 Vinith Balakrishnan Raj
+#=========================================================
+
 set -e
 
 echo "🚀 Setting up SuperTerm..."

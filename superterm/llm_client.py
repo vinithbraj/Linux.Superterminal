@@ -1,3 +1,24 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+=========================================================
+ File:        llm_client.py
+ Author:      Vinith Balakrishnan Raj
+ Created:     2025-10-05
+ Description: Interface for querying local Ollama LLM models
+
+ Usage:
+     from superterm.llm_client import query_llm
+
+ Notes:
+     - Requires Ollama server running on localhost:11434
+     - Maintains context from last executed command
+
+ License:
+     MIT License - Copyright (c) 2025 Vinith Balakrishnan Raj
+=========================================================
+"""
+
 import requests
 import json
 
@@ -29,7 +50,7 @@ def set_last_context(cmd: str, output: str):
             trimmed_output = trimmed_output[-8000:]
         LAST_COMMAND_OUTPUT = trimmed_output
 
-SYSTEM_PROMPT = """
+SYSTEM_PROMPT = r"""
 You are SuperTerm, a Linux assistant running inside Ubuntu.
 
 Behavior Rules:

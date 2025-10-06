@@ -1,4 +1,24 @@
 #!/usr/bin/env bash
+# -*- coding: utf-8 -*-
+#=========================================================
+# File:        startllm.sh
+# Author:      Vinith Balakrishnan Raj
+# Created:     2025-10-05
+# Description: Docker-based Ollama LLM server startup script
+#
+# Usage:
+#     bash startllm.sh
+#
+# Notes:
+#     - Checks Docker installation and daemon status
+#     - Launches or starts existing Ollama container
+#     - Enables GPU support if available
+#     - Verifies Ollama readiness
+#
+# License:
+#     MIT License - Copyright (c) 2025 Vinith Balakrishnan Raj
+#=========================================================
+
 set -e
 
 # --- 2️⃣ Check Docker installation ---

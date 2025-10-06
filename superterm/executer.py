@@ -1,3 +1,25 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+=========================================================
+ File:        executer.py
+ Author:      Vinith Balakrishnan Raj
+ Created:     2025-10-05
+ Description: Shell command execution with live output streaming
+
+ Usage:
+     from superterm.executer import run_command
+
+ Notes:
+     - Handles both interactive and non-interactive commands
+     - Streams output in real-time
+     - Captures output for LLM context
+
+ License:
+     MIT License - Copyright (c) 2025 Vinith Balakrishnan Raj
+=========================================================
+"""
+
 import subprocess
 import os
 import sys

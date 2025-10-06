@@ -1,3 +1,24 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+=========================================================
+ File:        cli.py
+ Author:      Vinith Balakrishnan Raj
+ Created:     2025-10-05
+ Description: AI-powered terminal interface with LLM integration
+
+ Usage:
+     superterm
+
+ Notes:
+     - Requires Ollama running locally
+     - Prefix commands with '!' for AI assistance
+
+ License:
+     MIT License - Copyright (c) 2025 Vinith Balakrishnan Raj
+=========================================================
+"""
+
 # --- Standard library imports ---
 import itertools
 import os

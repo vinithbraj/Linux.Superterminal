@@ -1,3 +1,24 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+=========================================================
+ File:        setup.py
+ Author:      Vinith Balakrishnan Raj
+ Created:     2025-10-05
+ Description: Setup configuration for SuperTerm package
+
+ Usage:
+     pip install -e .
+
+ Notes:
+     - Requires Python 3.9 or higher
+     - Installs superterm as a console script
+
+ License:
+     MIT License - Copyright (c) 2025 Vinith Balakrishnan Raj
+=========================================================
+"""
+
 from setuptools import setup, find_packages
 
 setup(
