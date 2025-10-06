@@ -67,9 +67,7 @@ def add_to_history(command: str):
         readline.add_history(command)
 
 def parse_response(response: str):
-    """Parse LLM JSON output and return (explanation, command)."""
     try:
-        # Trim whitespace and extract JSON portion if extra text is present
         json_start = response.find("{")
         json_end = response.rfind("}") + 1
         json_text = response[json_start:json_end].strip()
@@ -127,6 +125,38 @@ def execute_shell_command(command: str):
     except Exception as e:
         print(f"Error executing command '{command}': {e}")
 
+def process_user_prompt(user_input: str):
+    if user_input.startswith("!"):
+        llm_prompt = user_input[1:].strip()
+        stop_spinner = spinning_cursor()
+        response = query_llm(llm_prompt)
+        stop_spinner()
+
+        explanation, command = parse_response(response)
+
+        print(f"{explanation}\n")
+
+        if command:
+            if "none" not in command.lower():
+
+                # show it once
+                print(f"Suggested command: {command}\n")
+
+                # preload it into the input line without reprinting
+                def prefill():
+                    readline.insert_text(command)
+
+                readline.set_startup_hook(prefill)
+                try:
+                    user_input = input(f"{os.getcwd()} > ").strip()
+                finally:
+                    readline.set_startup_hook(None)
+                process_user_prompt(user_input)
+    else:
+        execute_shell_command(user_input)
+
+
+
 
 # ============================================================
 # Main interactive loop
@@ -148,34 +178,7 @@ def run():
             if user_input.lower() in ["exit", "quit"]:
                 break
 
-            # --- Handle AI-assisted modes ---
-            if user_input.startswith("!"):
-                llm_prompt = user_input[1:].strip()
-                stop_spinner = spinning_cursor()
-                response = query_llm(llm_prompt)
-                stop_spinner()
-
-                explanation, command = parse_response(response)
-
-                print(f"{explanation}\n")
-
-                if command:
-                    if "none" not in command.lower():
-
-                        # show it once
-                        print(f"Suggested command: {command}\n")
-
-                        # preload it into the input line without reprinting
-                        def prefill():
-                            readline.insert_text(command)
-
-                        readline.set_startup_hook(prefill)
-                        try:
-                            user_input = input(f"{os.getcwd()} > ").strip()
-                        finally:
-                            readline.set_startup_hook(None)
-
-            execute_shell_command(user_input)
+            process_user_prompt(user_input)
 
         except KeyboardInterrupt:
             print("\nExiting SuperTerm.")
