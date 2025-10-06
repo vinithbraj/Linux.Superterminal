@@ -138,23 +138,15 @@ Look for **“SuperTerm – AI Terminal”** in your Applications menu or on you
 ```mermaid
 graph TD
     A[User Input] -->|Normal Command| B[Executor]
-    A -->|Natural Language (! prefix)| C[LLM Client]
-    C --> D[Ollama API (Local Model)]
-    D --> E[Command Suggestion + Explanation]
-    E --> F[Executor -> Shell]
+    A -->|"Natural Language (!-prefix)"| C[LLM Client]
+    C --> D["Ollama API (Local Model)"]
+    D --> E["Command Suggestion + Explanation"]
+    E --> F["Executor -> Shell"]
+
 ```
 
 ---
 
-## 🧩 Roadmap
-
-- 🔐 Command sandboxing  
-- 🧩 Plugin system (Docker, Git, Kubernetes)  
-- 🌈 Prompt customization  
-- 🪶 Output summarization  
-- 🖥️ macOS and Windows builds (via WSL)
-
----
 
 ## 🪪 License
 
