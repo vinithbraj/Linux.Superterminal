@@ -65,7 +65,7 @@ def run_command(command: str):
 
         # --- Handle truly interactive tools (no capture, direct terminal) ---
         if any(command.strip().startswith(k) for k in interactive_keywords):
-            print(f"⚙️  Launching interactive session: {command}\n")
+            print(f"Launching interactive session: {command}\n")
             exit_code = os.system(command)
             # Record minimal context so !ref still knows what ran
             set_last_context(command, f"[Exited interactive command with code {exit_code}]")

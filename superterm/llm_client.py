@@ -27,7 +27,7 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "llama3"   # you can switch to codellama / mistral / phind-codellama, etc.
 TIMEOUT = 300
 
-# --- 🔁 Context from last shell command (set in executer.py) ---
+# --- Context from last shell command (set in executer.py) ---
 LAST_COMMAND_INPUT = None
 LAST_COMMAND_OUTPUT = None
 
@@ -121,7 +121,7 @@ def query_llm(prompt: str) -> str:
     always provided as contextual reference.
     """
     try:
-        # --- 🧱 Compose full prompt for model ---
+        # --- Compose full prompt for model ---
         full_prompt = (
             f"{SYSTEM_PROMPT.strip()}\n\n"
             f"--- Previous Command Context ---\n"
@@ -131,7 +131,7 @@ def query_llm(prompt: str) -> str:
             f"User input:\n{prompt}\nAssistant:"
         )
 
-        # --- 📨 Send to Ollama ---
+        # --- Send to Ollama ---
         payload = {
             "model": MODEL_NAME,
             "prompt": full_prompt,
@@ -140,7 +140,7 @@ def query_llm(prompt: str) -> str:
         resp = requests.post(OLLAMA_URL, json=payload, timeout=TIMEOUT)
         text = resp.text.strip()
 
-        # --- 🧩 Parse JSON (if Ollama returns JSON) ---
+        # --- Parse JSON (if Ollama returns JSON) ---
         try:
             data = json.loads(text)
             result = data.get("response", text).strip()

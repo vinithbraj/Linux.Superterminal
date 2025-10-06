@@ -80,18 +80,18 @@ def parse_response(response: str):
         command = data.get("command", "").strip()
         return explanation, command
     except Exception as e:
-        print(f"⚠️  Failed to parse LLM response as JSON: {e}")
+        print(f"Warning: Failed to parse LLM response as JSON: {e}")
         return response.strip(), "none"
 
 def change_directory(path: str):
     try:
         os.chdir(os.path.expanduser(path))
     except FileNotFoundError:
-        print(f"  Directory not found: {path}")
+        print(f"Directory not found: {path}")
     except Exception as e:
-        print(f"❌ Error changing directory: {e}")
+        print(f"Error changing directory: {e}")
 
-def spinning_cursor(message="🧠 Sending to LLM"):
+def spinning_cursor(message=""):
     spinner = itertools.cycle(["|", "/", "-", "\\"])
     stop_flag = threading.Event()
 
@@ -125,7 +125,7 @@ def execute_shell_command(command: str):
             print(run_command(command))
         add_to_history(command)
     except Exception as e:
-        print(f"❌ Error executing command '{command}': {e}")
+        print(f"Error executing command '{command}': {e}")
 
 
 # ============================================================
@@ -134,8 +134,8 @@ def execute_shell_command(command: str):
 
 @app.command()
 def run():
-    print("🧠 SuperTerm — AI-powered Ubuntu Terminal")
-    print("💡 Tip: Prefix '!' for AI (e.g., '!ref why?', '!info ubuntu'), normal commands run as shell.\n")
+    print("SuperTerm — AI-powered Ubuntu Terminal")
+    print("Tip: Prefix '!' for AI (e.g., '!ref why?', '!info ubuntu'), normal commands run as shell.\n")
 
     while True:
         try:
@@ -151,19 +151,19 @@ def run():
             # --- Handle AI-assisted modes ---
             if user_input.startswith("!"):
                 llm_prompt = user_input[1:].strip()
-                stop_spinner = spinning_cursor(f"🧠 Thinking...")
+                stop_spinner = spinning_cursor()
                 response = query_llm(llm_prompt)
                 stop_spinner()
 
                 explanation, command = parse_response(response)
 
-                print(f"💬 {explanation}\n")
+                print(f"{explanation}\n")
 
                 if command:
                     if "none" not in command.lower():
 
                         # show it once
-                        print(f"💡 Suggested command: {command}\n")
+                        print(f"Suggested command: {command}\n")
 
                         # preload it into the input line without reprinting
                         def prefill():
@@ -181,7 +181,7 @@ def run():
             print("\nExiting SuperTerm.")
             break
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"Error: {e}")
         finally:
             try:
                 readline.write_history_file(HISTORY_FILE)
