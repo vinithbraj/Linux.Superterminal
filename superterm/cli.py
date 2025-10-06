@@ -66,7 +66,6 @@ def add_to_history(command: str):
     if last != command:
         readline.add_history(command)
 
-
 def parse_response(response: str):
     """Parse LLM JSON output and return (explanation, command)."""
     try:
@@ -83,7 +82,6 @@ def parse_response(response: str):
     except Exception as e:
         print(f"⚠️  Failed to parse LLM response as JSON: {e}")
         return response.strip(), "none"
-
 
 def change_directory(path: str):
     try:
@@ -159,18 +157,17 @@ def run():
 
                 explanation, command = parse_response(response)
 
-                print(f"💬 {explanation}")
+                print(f"💬 {explanation}\n")
 
                 if command:
                     if "none" not in command.lower():
-                        clean_cmd = command.replace("Command:", "").strip()
 
                         # show it once
-                        print(f"\n💡 Suggested command: {clean_cmd}\n")
+                        print(f"💡 Suggested command: {command}\n")
 
                         # preload it into the input line without reprinting
                         def prefill():
-                            readline.insert_text(clean_cmd)
+                            readline.insert_text(command)
 
                         readline.set_startup_hook(prefill)
                         try:
