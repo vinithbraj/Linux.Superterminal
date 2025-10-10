@@ -60,6 +60,9 @@ def run_command(command: str):
 
             # --- Misc interactive utilities ---
             "crontab -e", "visudo", "alsamixer", "amixer",
+
+            # --- Docker commands ---
+            "docker",
         ]
 
 
