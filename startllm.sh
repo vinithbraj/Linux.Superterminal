@@ -49,6 +49,8 @@ else
     --gpus=all \
     -v ollama:/root/.ollama \
     -p 11434:11434 \
+    -e OLLAMA_HOST=0.0.0.0 \
+    -e OLLAMA_ORIGINS=* \
     --name ollama \
     ollama/ollama
 fi
