@@ -24,7 +24,7 @@ import json
 
 # Configuration
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "llama3"   # you can switch to codellama / mistral / phind-codellama, etc.
+MODEL_NAME = "qwen2.5:7b"   # you can switch to codellama / mistral / phind-codellama, etc.
 TIMEOUT = 300
 
 # --- Context from last shell command (set in executer.py) ---
