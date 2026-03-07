@@ -25,7 +25,7 @@ import os
 import sys
 import pty
 import select
-from superterm.llm_client import set_last_context
+from superterm.llm_context import set_last_context
 
 def run_command(command: str):
     """Run shell command with live streaming output (like real terminal)."""

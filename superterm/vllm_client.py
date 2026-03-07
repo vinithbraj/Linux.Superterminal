@@ -2,32 +2,35 @@
 # -*- coding: utf-8 -*-
 """
 =========================================================
- File:        llm_client.py
+ File:        vllm_client.py
  Author:      Vinith Balakrishnan Raj
- Created:     2025-10-05
- Description: Interface for querying local Ollama LLM models
+ Created:     2026-03-06
+ Description: Interface for querying local vLLM OpenAI-compatible models
 
  Usage:
-     from superterm.llm_client import query_llm
+     from superterm.vllm_client import query_llm
 
  Notes:
-     - Requires Ollama server running on localhost:11434
+     - Requires vLLM server running on localhost:8000
      - Maintains context from last executed command
 
  License:
-     MIT License - Copyright (c) 2025 Vinith Balakrishnan Raj
+     MIT License - Copyright (c) 2026 Vinith Balakrishnan Raj
 =========================================================
 """
 
 import json
+import os
+
 import requests
 
 from superterm.llm_context import get_last_context, set_last_context
 
 # Configuration
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "qwen2.5:7b-instruct"   # you can switch to codellama / mistral / phind-codellama, etc.
-TIMEOUT = 300
+VLLM_BASE_URL = os.getenv("SUPERTERM_VLLM_BASE_URL", "http://localhost:8000/v1")
+VLLM_CHAT_URL = f"{VLLM_BASE_URL.rstrip('/')}/chat/completions"
+MODEL_NAME = os.getenv("SUPERTERM_MODEL_NAME", "Qwen/Qwen2.5-7B-Instruct")
+TIMEOUT = int(os.getenv("SUPERTERM_LLM_TIMEOUT", "300"))
 
 SYSTEM_PROMPT = r"""
 You are SuperTerm, a Linux assistant running inside Ubuntu.
@@ -95,43 +98,42 @@ Invalid responses (examples):
 
 
 def query_llm(prompt: str) -> str:
-    """
-    Query the local Ollama model with the last shell command and its output
-    always provided as contextual reference.
-    """
+    """Query the local vLLM model with last shell command context."""
     try:
         last_command_input, last_command_output = get_last_context()
 
-        # --- Compose full prompt for model ---
-        full_prompt = (
-            f"{SYSTEM_PROMPT.strip()}\n\n"
-            f"--- Previous Command Context ---\n"
+        user_prompt = (
+            "--- Previous Command Context ---\n"
             f"Command:\n{last_command_input or '[None]'}\n\n"
             f"Output:\n{last_command_output or '[No output captured]'}\n"
-            f"---------------------------------\n\n"
+            "---------------------------------\n\n"
             f"User input:\n{prompt}\nAssistant:"
         )
 
-        # --- Send to Ollama ---
         payload = {
             "model": MODEL_NAME,
-            "prompt": full_prompt,
-            "stream": False
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT.strip()},
+                {"role": "user", "content": user_prompt},
+            ],
+            "temperature": 0,
+            "stream": False,
         }
-        resp = requests.post(OLLAMA_URL, json=payload, timeout=TIMEOUT)
-        text = resp.text.strip()
 
-        # --- Parse JSON (if Ollama returns JSON) ---
-        try:
-            data = json.loads(text)
-            result = data.get("response", text).strip()
-        except json.JSONDecodeError:
-            result = text
+        resp = requests.post(VLLM_CHAT_URL, json=payload, timeout=TIMEOUT)
+        resp.raise_for_status()
 
-        return result
+        data = resp.json()
+        choices = data.get("choices", [])
+        if choices and choices[0].get("message", {}).get("content"):
+            return choices[0]["message"]["content"].strip()
+
+        return json.dumps(data)
 
     except requests.ConnectionError:
-        return "[Cannot connect to Ollama. Is 'ollama serve' running?]"
+        return "[Cannot connect to vLLM. Is the vLLM server running on localhost:8000?]"
+    except requests.HTTPError as e:
+        return f"[vLLM HTTP error: {e}]"
     except Exception as e:
         return f"[Unexpected error: {e}]"
 
