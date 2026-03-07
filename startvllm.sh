@@ -23,7 +23,7 @@ set -e
 
 CONTAINER_NAME="vllm"
 IMAGE_NAME="vllm/vllm-openai:latest"
-MODEL_NAME="${VLLM_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
+MODEL_NAME="${VLLM_MODEL:-Qwen/Qwen2.5-1.5B-Instruct}"
 HOST_PORT="${VLLM_PORT:-8000}"
 CONTAINER_PORT="8000"
 HF_CACHE_HOST="${HF_CACHE_HOST:-$HOME/.cache/huggingface}"

@@ -29,7 +29,7 @@ from superterm.llm_context import get_last_context, set_last_context
 # Configuration
 VLLM_BASE_URL = os.getenv("SUPERTERM_VLLM_BASE_URL", "http://localhost:8000/v1")
 VLLM_CHAT_URL = f"{VLLM_BASE_URL.rstrip('/')}/chat/completions"
-MODEL_NAME = os.getenv("SUPERTERM_MODEL_NAME", "Qwen/Qwen2.5-7B-Instruct")
+MODEL_NAME = os.getenv("SUPERTERM_MODEL_NAME", "Qwen/Qwen2.5-1.5B-Instruct")
 TIMEOUT = int(os.getenv("SUPERTERM_LLM_TIMEOUT", "300"))
 
 SYSTEM_PROMPT = r"""
